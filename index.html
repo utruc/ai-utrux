@@ -1,261 +1,138 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="fa">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Utrux AI</title>
+<title>AI Chat</title>
 
 <style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #0d0d0d;
+  color: white;
+  display: flex;
+  height: 100vh;
+  flex-direction: column;
 }
 
-body{
-    font-family:Tahoma,sans-serif;
-
-    background:
-    radial-gradient(circle at center,
-    #1e3a8a 0%,
-    #081229 35%,
-    #020617 100%);
-
-    min-height:100vh;
-    color:white;
+header {
+  padding: 15px;
+  background: #1a1a1a;
+  text-align: center;
+  font-weight: bold;
 }
 
-.container{
-    max-width:900px;
-    margin:auto;
-    padding:30px;
+#chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.topbar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:30px;
+.msg {
+  padding: 12px 15px;
+  border-radius: 12px;
+  max-width: 75%;
+  white-space: pre-wrap;
 }
 
-.back-btn{
-    background:#2563eb;
-    color:white;
-    border:none;
-    padding:12px 18px;
-    border-radius:12px;
-    cursor:pointer;
+.user {
+  align-self: flex-end;
+  background: #2b7cff;
 }
 
-.back-btn:hover{
-    background:#3b82f6;
+.bot {
+  align-self: flex-start;
+  background: #2a2a2a;
 }
 
-.title{
-    font-size:32px;
-    font-weight:bold;
+.inputBox {
+  display: flex;
+  padding: 10px;
+  background: #1a1a1a;
 }
 
-.chat-box{
-    background:rgba(255,255,255,.08);
-    border-radius:20px;
-    padding:20px;
-    min-height:400px;
-    margin-bottom:20px;
-    overflow:auto;
+input {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  outline: none;
 }
 
-.message{
-    margin-bottom:15px;
-    padding:12px;
-    border-radius:12px;
-    line-height:2;
-}
-
-.user{
-    background:#2563eb;
-}
-
-.ai{
-    background:rgba(255,255,255,.08);
-}
-
-.input-area{
-    display:flex;
-    gap:10px;
-}
-
-#question{
-    flex:1;
-    padding:15px;
-    border:none;
-    border-radius:15px;
-    outline:none;
-    font-size:16px;
-}
-
-.send-btn{
-    width:120px;
-    border:none;
-    border-radius:15px;
-    background:#2563eb;
-    color:white;
-    cursor:pointer;
-}
-
-.send-btn:hover{
-    background:#3b82f6;
+button {
+  margin-left: 10px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #2b7cff;
+  color: white;
+  cursor: pointer;
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<header>⚡ AI Chat (Lite)</header>
 
-<div class="topbar">
+<div id="chat"></div>
 
-<div class="title">
-🤖 Utrux AI
-</div>
-
-<button
-class="back-btn"
-onclick="window.location.href='https://utruc.github.io/browser/'">
-🏠 بازگشت
-</button>
-
-</div>
-
-<div id="chat" class="chat-box">
-
-<div class="message ai">
-سلام 👋
-من هوش مصنوعی Utrux هستم.
-سوالت را بپرس.
-</div>
-
-</div>
-
-<div class="input-area">
-
-<input
-id="question"
-placeholder="پیام خود را بنویسید...">
-
-<button
-class="send-btn"
-onclick="askAI()">
-ارسال
-</button>
-
-</div>
-
+<div class="inputBox">
+  <input id="input" placeholder="پیامت رو بنویس..." />
+  <button onclick="send()">Send</button>
 </div>
 
 <script>
+const chat = document.getElementById("chat");
 
-async function askAI(){
-
-const input =
-document.getElementById("question");
-
-const question =
-input.value.trim();
-
-if(!question) return;
-
-const chat =
-document.getElementById("chat");
-
-chat.innerHTML += `
-<div class="message user">
-${question}
-</div>
-`;
-
-input.value = "";
-
-chat.innerHTML += `
-<div class="message ai" id="loading">
-⏳ در حال فکر کردن...
-</div>
-`;
-
-chat.scrollTop = chat.scrollHeight;
-
-try{
-
-const response =
-await fetch(
-"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AQ.Ab8RN6LU7MMJSbeO9WUO0zIzT99-0ZLTl7Lj3xr8x8BsIVsCXw",
-{
-method:"POST",
-headers:{
-"Content-Type":"application/json"
-},
-body:JSON.stringify({
-contents:[
-{
-parts:[
-{
-text:question
-}
-]
-}
-]
-})
-}
-);
-
-const data =
-await response.json();
-
-document
-.getElementById("loading")
-.remove();
-
-const answer =
-data.candidates?.[0]?.content?.parts?.[0]?.text
-|| "پاسخی دریافت نشد";
-
-chat.innerHTML += `
-<div class="message ai">
-${answer}
-</div>
-`;
-
-chat.scrollTop = chat.scrollHeight;
-
-}catch(err){
-
-document
-.getElementById("loading")
-.remove();
-
-chat.innerHTML += `
-<div class="message ai">
-❌ خطا در ارتباط با هوش مصنوعی
-</div>
-`;
-
+function addMsg(text, type) {
+  const div = document.createElement("div");
+  div.className = "msg " + type;
+  div.innerText = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
 }
 
+async function send() {
+  const input = document.getElementById("input");
+  const text = input.value.trim();
+  if (!text) return;
+
+  addMsg(text, "user");
+  input.value = "";
+
+  const botMsg = document.createElement("div");
+  botMsg.className = "msg bot";
+  botMsg.innerText = "⏳ در حال پاسخ...";
+  chat.appendChild(botMsg);
+  chat.scrollTop = chat.scrollHeight;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    const res = await fetch(
+      "https://text.pollinations.ai/" + encodeURIComponent(text),
+      { signal: controller.signal }
+    );
+
+    clearTimeout(timeout);
+
+    const data = await res.text();
+
+    botMsg.innerText = data || "پاسخ خالی دریافت شد";
+  } catch (err) {
+    botMsg.innerText = "❌ خطا در دریافت پاسخ (API در دسترس نیست یا کند است)";
+  }
 }
 
-document
-.getElementById("question")
-.addEventListener(
-"keypress",
-function(e){
-
-if(e.key==="Enter"){
-askAI();
-}
-
-}
-);
-
+document.getElementById("input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") send();
+});
 </script>
 
 </body>
