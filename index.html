@@ -3,21 +3,44 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Chat AI</title>
+<title>AI Chat ULTRA</title>
 
 <style>
 body {
   margin: 0;
   font-family: Arial;
-  background: #0f0f0f;
+  background: #0b0b0b;
   color: white;
   display: flex;
-  flex-direction: column;
   height: 100vh;
 }
 
+.sidebar {
+  width: 220px;
+  background: #151515;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar button {
+  padding: 10px;
+  border: none;
+  background: #2b7cff;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.chatArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 header {
-  padding: 15px;
+  padding: 12px;
   background: #1a1a1a;
   text-align: center;
   font-weight: bold;
@@ -58,16 +81,24 @@ header {
 input {
   flex: 1;
   padding: 12px;
-  border-radius: 8px;
   border: none;
+  border-radius: 8px;
   outline: none;
 }
 
-button {
+button.send {
   margin-left: 10px;
   padding: 12px 16px;
   background: #2b7cff;
-  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button.stop {
+  margin-left: 5px;
+  padding: 12px;
+  background: red;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -77,20 +108,47 @@ button {
 
 <body>
 
-<header>⚡ OpenRouter Chat</header>
+<div class="sidebar">
+  <button onclick="newChat()">+ New Chat</button>
+  <button onclick="clearChat()">🧹 Clear</button>
+</div>
 
-<div id="chat"></div>
+<div class="chatArea">
+  <header>⚡ AI CHAT ULTRA</header>
 
-<div class="inputBox">
-  <input id="input" placeholder="پیامت رو بنویس..." />
-  <button onclick="send()">Send</button>
+  <div id="chat"></div>
+
+  <div class="inputBox">
+    <input id="input" placeholder="پیامت رو بنویس..." />
+    <button class="send" onclick="send()">Send</button>
+    <button class="stop" onclick="stop()">Stop</button>
+  </div>
 </div>
 
 <script>
 
-const API_KEY = "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";
-
+const API_KEY = "PUT_YOUR_KEY_HERE";
 const chat = document.getElementById("chat");
+
+let messages = JSON.parse(localStorage.getItem("chat") || "[]");
+let controller = null;
+
+function save() {
+  localStorage.setItem("chat", JSON.stringify(messages));
+}
+
+function render() {
+  chat.innerHTML = "";
+  messages.forEach(m => {
+    const div = document.createElement("div");
+    div.className = "msg " + (m.role === "user" ? "user" : "bot");
+    div.innerText = m.content;
+    chat.appendChild(div);
+  });
+  chat.scrollTop = chat.scrollHeight;
+}
+
+render();
 
 function addMsg(text, type) {
   const div = document.createElement("div");
@@ -98,6 +156,7 @@ function addMsg(text, type) {
   div.innerText = text;
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
+  return div;
 }
 
 async function send() {
@@ -105,38 +164,58 @@ async function send() {
   const text = input.value.trim();
   if (!text) return;
 
-  addMsg(text, "user");
   input.value = "";
 
-  const bot = document.createElement("div");
-  bot.className = "msg bot";
-  bot.innerText = "thinking...";
-  chat.appendChild(bot);
+  messages.push({ role: "user", content: text });
+  addMsg(text, "user");
+  save();
+
+  const botMsg = addMsg("...", "bot");
+
+  controller = new AbortController();
 
   try {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Authorization": "Bearer " + API_KEY,
         "Content-Type": "application/json",
         "HTTP-Referer": window.location.href,
-        "X-Title": "My Chatbot"
+        "X-Title": "AI Chat ULTRA"
       },
       body: JSON.stringify({
-        model: "openrouter/auto",
-        messages: [
-          { role: "user", content: text }
-        ]
+        model: "meta-llama/llama-3.1-8b-instruct",
+        messages: messages,
+        stream: false
       })
     });
 
     const data = await res.json();
+    const reply = data.choices?.[0]?.message?.content || "error";
 
-    bot.innerText = data.choices?.[0]?.message?.content || "error";
+    botMsg.innerText = reply;
+
+    messages.push({ role: "assistant", content: reply });
+    save();
 
   } catch (err) {
-    bot.innerText = "connection error";
+    botMsg.innerText = "error / stopped";
   }
+}
+
+function stop() {
+  if (controller) controller.abort();
+}
+
+function clearChat() {
+  messages = [];
+  save();
+  render();
+}
+
+function newChat() {
+  clearChat();
 }
 
 document.getElementById("input").addEventListener("keydown", (e) => {
