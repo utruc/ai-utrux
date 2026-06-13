@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="fa">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Chat</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Chat AI</title>
 
 <style>
 body {
   margin: 0;
   font-family: Arial;
-  background: #0d0d0d;
+  background: #0f0f0f;
   color: white;
   display: flex;
-  height: 100vh;
   flex-direction: column;
+  height: 100vh;
 }
 
 header {
@@ -33,7 +33,7 @@ header {
 }
 
 .msg {
-  padding: 12px 15px;
+  padding: 10px 14px;
   border-radius: 12px;
   max-width: 75%;
   white-space: pre-wrap;
@@ -58,18 +58,18 @@ header {
 input {
   flex: 1;
   padding: 12px;
-  border: none;
   border-radius: 8px;
+  border: none;
   outline: none;
 }
 
 button {
   margin-left: 10px;
   padding: 12px 16px;
-  border: none;
-  border-radius: 8px;
   background: #2b7cff;
   color: white;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
 }
 </style>
@@ -77,7 +77,7 @@ button {
 
 <body>
 
-<header>⚡ AI Chat (Lite)</header>
+<header>⚡ OpenRouter Chat</header>
 
 <div id="chat"></div>
 
@@ -87,6 +87,9 @@ button {
 </div>
 
 <script>
+
+const API_KEY = "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";
+
 const chat = document.getElementById("chat");
 
 function addMsg(text, type) {
@@ -105,28 +108,34 @@ async function send() {
   addMsg(text, "user");
   input.value = "";
 
-  const botMsg = document.createElement("div");
-  botMsg.className = "msg bot";
-  botMsg.innerText = "⏳ در حال پاسخ...";
-  chat.appendChild(botMsg);
-  chat.scrollTop = chat.scrollHeight;
+  const bot = document.createElement("div");
+  bot.className = "msg bot";
+  bot.innerText = "thinking...";
+  chat.appendChild(bot);
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + API_KEY,
+        "Content-Type": "application/json",
+        "HTTP-Referer": window.location.href,
+        "X-Title": "My Chatbot"
+      },
+      body: JSON.stringify({
+        model: "openrouter/auto",
+        messages: [
+          { role: "user", content: text }
+        ]
+      })
+    });
 
-    const res = await fetch(
-      "https://text.pollinations.ai/" + encodeURIComponent(text),
-      { signal: controller.signal }
-    );
+    const data = await res.json();
 
-    clearTimeout(timeout);
+    bot.innerText = data.choices?.[0]?.message?.content || "error";
 
-    const data = await res.text();
-
-    botMsg.innerText = data || "پاسخ خالی دریافت شد";
   } catch (err) {
-    botMsg.innerText = "❌ خطا در دریافت پاسخ (API در دسترس نیست یا کند است)";
+    bot.innerText = "connection error";
   }
 }
 
